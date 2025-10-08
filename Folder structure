@@ -1,0 +1,9 @@
+backend/
+├── app.py
+├── config.py
+├── models.py
+├── routes/
+│   ├── candidates.py
+│   └── votes.py
+├── requirements.txt
+├── .gitignore
