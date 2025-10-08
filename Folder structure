@@ -1,9 +1,9 @@
 backend/
-├── app.py
-├── config.py
-├── models.py
+├── app.py                # Main Flask entry point (runs the app)
+├── config.py             # Database + environment configuration
+├── models.py             # Database models (Candidate, Vote, etc.)
 ├── routes/
-│   ├── candidates.py
-│   └── votes.py
-├── requirements.txt
-├── .gitignore
+│   ├── candidates.py     # Candidate registration, payment verification, list
+│   └── votes.py          # Voting routes (vote casting, results, etc.)
+├── requirements.txt      # Dependencies for Render & local setup
+├── .gitignore            # Ignore unnecessary files (venv, pycache, etc.)
