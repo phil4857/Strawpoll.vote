@@ -3,38 +3,59 @@ from models import db, Vote, Candidate
 
 votes_bp = Blueprint('votes', __name__)
 
+# --- Cast a vote ---
 @votes_bp.route('/', methods=['POST'])
 def cast_vote():
-    data = request.json
+    data = request.get_json()
+
     voter_id = data.get('voter_id')
     candidate_id = data.get('candidate_id')
     poll_id = data.get('poll_id')
 
-    # Check if voter already voted
-    existing = Vote.query.filter_by(voter_id=voter_id, poll_id=poll_id).first()
-    if existing:
-        return jsonify({"msg": "Already voted"}), 400
+    if not all([voter_id, candidate_id, poll_id]):
+        return jsonify({"error": "voter_id, candidate_id, and poll_id are required"}), 400
 
+    # Check if voter already voted in this poll
+    existing_vote = Vote.query.filter_by(voter_id=voter_id, poll_id=poll_id).first()
+    if existing_vote:
+        return jsonify({"message": "You have already voted in this poll"}), 400
+
+    # Record the vote
     vote = Vote(voter_id=voter_id, candidate_id=candidate_id, poll_id=poll_id)
     db.session.add(vote)
     db.session.commit()
-    return jsonify({"msg": "Vote recorded"})
 
+    return jsonify({"message": "Vote recorded successfully"}), 201
+
+
+# --- Get live results for a poll ---
 @votes_bp.route('/results/<int:poll_id>', methods=['GET'])
 def get_results(poll_id):
-    results = db.session.query(
-        Candidate.id,
-        Candidate.name,
-        Candidate.party,
-        Candidate.position,
-        Candidate.photo_url,
-        db.func.count(Vote.id).label('votes')
-    ).outerjoin(Vote, Candidate.id == Vote.candidate_id)\
-     .filter(Candidate.poll_id == poll_id)\
-     .group_by(Candidate.id).all()
+    results = (
+        db.session.query(
+            Candidate.id,
+            Candidate.name,
+            Candidate.party,
+            Candidate.position,
+            Candidate.photo_url,
+            db.func.count(Vote.id).label('votes')
+        )
+        .outerjoin(Vote, Candidate.id == Vote.candidate_id)
+        .filter(Candidate.poll_id == poll_id)
+        .group_by(Candidate.id)
+        .all()
+    )
 
     data = [
-        {"id": r.id, "name": r.name, "party": r.party, "position": r.position, "photo_url": r.photo_url, "votes": r.votes}
+        {
+            "id": r.id,
+            "name": r.name,
+            "party": r.party,
+            "position": r.position,
+            "photo_url": r.photo_url,
+            "votes": r.votes,
+        }
         for r in results
     ]
-    return jsonify(data)
+
+    return jsonify(data), 200
