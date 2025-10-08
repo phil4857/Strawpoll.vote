@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: strawpoll-backend
+    env: python
+    rootDir: backend
+    buildCommand: |
+      python -m pip install --upgrade pip
+      python -m pip install -r requirements.txt
+    startCommand: gunicorn app:app -b 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        value: changeme123
+      - key: DATABASE_URL
+        sync: false
