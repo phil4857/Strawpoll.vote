@@ -6,39 +6,53 @@ candidates_bp = Blueprint('candidates', __name__)
 # Candidate registration
 @candidates_bp.route('/register', methods=['POST'])
 def register_candidate():
-    data = request.json
+    data = request.get_json()
+
     name = data.get('name')
     party = data.get('party')
     photo_url = data.get('photo_url')
     poll_id = data.get('poll_id')
     position = data.get('position')  # MCA or MP
 
+    if not all([name, party, photo_url, poll_id, position]):
+        return jsonify({"error": "All fields (name, party, photo_url, poll_id, position) are required"}), 400
+
     # Set registration fee
-    if position == 'MCA':
+    if position.upper() == 'MCA':
         fee = 200
-    elif position == 'MP':
+    elif position.upper() == 'MP':
         fee = 500
     else:
-        return jsonify({"error": "Invalid position"}), 400
+        return jsonify({"error": "Invalid position. Use 'MCA' or 'MP'"}), 400
 
     candidate = Candidate(
         name=name,
         party=party,
         photo_url=photo_url,
-        position=position,
-        poll_id=poll_id
+        position=position.upper(),
+        poll_id=poll_id,
+        payment_status=False
     )
     db.session.add(candidate)
     db.session.commit()
 
-    return jsonify({"candidate_id": candidate.id, "status": "Pending Payment", "fee": fee})
+    return jsonify({
+        "candidate_id": candidate.id,
+        "status": "Pending Payment",
+        "fee": fee,
+        "mpesa_number": "0739075065"
+    }), 201
 
-# Payment verification
+
+# Verify candidate payment manually
 @candidates_bp.route('/payment', methods=['POST'])
 def verify_payment():
-    data = request.json
+    data = request.get_json()
     candidate_id = data.get('candidate_id')
     payment_txn_id = data.get('payment_txn_id')
+
+    if not all([candidate_id, payment_txn_id]):
+        return jsonify({"error": "Candidate ID and payment transaction ID are required"}), 400
 
     candidate = Candidate.query.get(candidate_id)
     if not candidate:
@@ -47,4 +61,31 @@ def verify_payment():
     candidate.payment_status = True
     candidate.payment_txn_id = payment_txn_id
     db.session.commit()
-    return jsonify({"status": "Payment successful"})
+
+    return jsonify({
+        "status": "Payment verified successfully",
+        "candidate": {
+            "id": candidate.id,
+            "name": candidate.name,
+            "position": candidate.position,
+            "party": candidate.party
+        }
+    }), 200
+
+
+# Get all candidates
+@candidates_bp.route('/', methods=['GET'])
+def get_all_candidates():
+    candidates = Candidate.query.all()
+    result = []
+    for c in candidates:
+        result.append({
+            "id": c.id,
+            "name": c.name,
+            "party": c.party,
+            "photo_url": c.photo_url,
+            "position": c.position,
+            "poll_id": c.poll_id,
+            "payment_status": c.payment_status
+        })
+    return jsonify(result), 200
