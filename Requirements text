@@ -3,4 +3,4 @@ backend/
 ├── config.py
 ├── models.py
 ├── routes/
-├── requirements.txt   <-- this file
+├── requirements.txt
