@@ -26,9 +26,15 @@ def get_results(poll_id):
         Candidate.id,
         Candidate.name,
         Candidate.party,
+        Candidate.position,
         Candidate.photo_url,
         db.func.count(Vote.id).label('votes')
-    ).outerjoin(Vote, Candidate.id == Vote.candidate_id).filter(Candidate.poll_id == poll_id).group_by(Candidate.id).all()
+    ).outerjoin(Vote, Candidate.id == Vote.candidate_id)\
+     .filter(Candidate.poll_id == poll_id)\
+     .group_by(Candidate.id).all()
 
-    data = [{"id": r.id, "name": r.name, "party": r.party, "photo_url": r.photo_url, "votes": r.votes} for r in results]
+    data = [
+        {"id": r.id, "name": r.name, "party": r.party, "position": r.position, "photo_url": r.photo_url, "votes": r.votes}
+        for r in results
+    ]
     return jsonify(data)
