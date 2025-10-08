@@ -1,4 +1,6 @@
-Flask==2.3.4
-Flask-Cors==3.1.0
-Flask-SQLAlchemy==3.0.5
-psycopg2-binary==2.9.9
+backend/
+├── app.py
+├── config.py
+├── models.py
+├── routes/
+├── requirements.txt   <-- this file
