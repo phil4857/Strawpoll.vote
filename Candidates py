@@ -3,6 +3,7 @@ from models import db, Candidate
 
 candidates_bp = Blueprint('candidates', __name__)
 
+# Candidate registration
 @candidates_bp.route('/register', methods=['POST'])
 def register_candidate():
     data = request.json
@@ -10,17 +11,29 @@ def register_candidate():
     party = data.get('party')
     photo_url = data.get('photo_url')
     poll_id = data.get('poll_id')
+    position = data.get('position')  # MCA or MP
+
+    # Set registration fee
+    if position == 'MCA':
+        fee = 200
+    elif position == 'MP':
+        fee = 500
+    else:
+        return jsonify({"error": "Invalid position"}), 400
 
     candidate = Candidate(
         name=name,
         party=party,
         photo_url=photo_url,
+        position=position,
         poll_id=poll_id
     )
     db.session.add(candidate)
     db.session.commit()
-    return jsonify({"candidate_id": candidate.id, "status": "Pending Payment"})
 
+    return jsonify({"candidate_id": candidate.id, "status": "Pending Payment", "fee": fee})
+
+# Payment verification
 @candidates_bp.route('/payment', methods=['POST'])
 def verify_payment():
     data = request.json
