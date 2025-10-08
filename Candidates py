@@ -1,0 +1,37 @@
+from flask import Blueprint, request, jsonify
+from models import db, Candidate
+
+candidates_bp = Blueprint('candidates', __name__)
+
+@candidates_bp.route('/register', methods=['POST'])
+def register_candidate():
+    data = request.json
+    name = data.get('name')
+    party = data.get('party')
+    photo_url = data.get('photo_url')
+    poll_id = data.get('poll_id')
+
+    candidate = Candidate(
+        name=name,
+        party=party,
+        photo_url=photo_url,
+        poll_id=poll_id
+    )
+    db.session.add(candidate)
+    db.session.commit()
+    return jsonify({"candidate_id": candidate.id, "status": "Pending Payment"})
+
+@candidates_bp.route('/payment', methods=['POST'])
+def verify_payment():
+    data = request.json
+    candidate_id = data.get('candidate_id')
+    payment_txn_id = data.get('payment_txn_id')
+
+    candidate = Candidate.query.get(candidate_id)
+    if not candidate:
+        return jsonify({"error": "Candidate not found"}), 404
+
+    candidate.payment_status = True
+    candidate.payment_txn_id = payment_txn_id
+    db.session.commit()
+    return jsonify({"status": "Payment successful"})
