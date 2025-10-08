@@ -3,38 +3,52 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+
 class Voter(db.Model):
     __tablename__ = "voters"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    email = db.Column(db.String(100), unique=True)
-    password_hash = db.Column(db.String(255))
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship: one voter → many votes
+    votes = db.relationship("Vote", backref="voter", lazy=True)
+
 
 class Poll(db.Model):
     __tablename__ = "polls"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    start_time = db.Column(db.DateTime)
-    end_time = db.Column(db.DateTime)
-    description = db.Column(db.Text)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime, nullable=False)
+
+    # Relationships
+    candidates = db.relationship("Candidate", backref="poll", lazy=True)
+    votes = db.relationship("Vote", backref="poll", lazy=True)
+
 
 class Candidate(db.Model):
     __tablename__ = "candidates"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
+    name = db.Column(db.String(100), nullable=False)
     party = db.Column(db.String(100), nullable=True)
-    photo_url = db.Column(db.Text)
-    position = db.Column(db.String(50))  # e.g., 'MCA' or 'MP'
+    photo_url = db.Column(db.Text, nullable=True)
+    position = db.Column(db.String(50), nullable=False)  # 'MCA' or 'MP'
     payment_status = db.Column(db.Boolean, default=False)
-    payment_txn_id = db.Column(db.String(100))
-    poll_id = db.Column(db.Integer, db.ForeignKey('polls.id'))
+    payment_txn_id = db.Column(db.String(100), nullable=True)
+    poll_id = db.Column(db.Integer, db.ForeignKey("polls.id"), nullable=False)
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship: one candidate → many votes
+    votes = db.relationship("Vote", backref="candidate", lazy=True)
+
 
 class Vote(db.Model):
     __tablename__ = "votes"
     id = db.Column(db.Integer, primary_key=True)
-    voter_id = db.Column(db.Integer, db.ForeignKey('voters.id'))
-    candidate_id = db.Column(db.Integer, db.ForeignKey('candidates.id'))
-    poll_id = db.Column(db.Integer, db.ForeignKey('polls.id'))
+    voter_id = db.Column(db.Integer, db.ForeignKey("voters.id"), nullable=False)
+    candidate_id = db.Column(db.Integer, db.ForeignKey("candidates.id"), nullable=False)
+    poll_id = db.Column(db.Integer, db.ForeignKey("polls.id"), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
