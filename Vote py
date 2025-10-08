@@ -1,0 +1,34 @@
+from flask import Blueprint, request, jsonify
+from models import db, Vote, Candidate
+
+votes_bp = Blueprint('votes', __name__)
+
+@votes_bp.route('/', methods=['POST'])
+def cast_vote():
+    data = request.json
+    voter_id = data.get('voter_id')
+    candidate_id = data.get('candidate_id')
+    poll_id = data.get('poll_id')
+
+    # Check if voter already voted
+    existing = Vote.query.filter_by(voter_id=voter_id, poll_id=poll_id).first()
+    if existing:
+        return jsonify({"msg": "Already voted"}), 400
+
+    vote = Vote(voter_id=voter_id, candidate_id=candidate_id, poll_id=poll_id)
+    db.session.add(vote)
+    db.session.commit()
+    return jsonify({"msg": "Vote recorded"})
+
+@votes_bp.route('/results/<int:poll_id>', methods=['GET'])
+def get_results(poll_id):
+    results = db.session.query(
+        Candidate.id,
+        Candidate.name,
+        Candidate.party,
+        Candidate.photo_url,
+        db.func.count(Vote.id).label('votes')
+    ).outerjoin(Vote, Candidate.id == Vote.candidate_id).filter(Candidate.poll_id == poll_id).group_by(Candidate.id).all()
+
+    data = [{"id": r.id, "name": r.name, "party": r.party, "photo_url": r.photo_url, "votes": r.votes} for r in results]
+    return jsonify(data)
