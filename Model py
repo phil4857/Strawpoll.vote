@@ -1,0 +1,39 @@
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
+db = SQLAlchemy()
+
+class Voter(db.Model):
+    __tablename__ = "voters"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    email = db.Column(db.String(100), unique=True)
+    password_hash = db.Column(db.String(255))
+    registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Poll(db.Model):
+    __tablename__ = "polls"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    start_time = db.Column(db.DateTime)
+    end_time = db.Column(db.DateTime)
+    description = db.Column(db.Text)
+
+class Candidate(db.Model):
+    __tablename__ = "candidates"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
+    party = db.Column(db.String(100), nullable=True)
+    photo_url = db.Column(db.Text)
+    payment_status = db.Column(db.Boolean, default=False)
+    payment_txn_id = db.Column(db.String(100))
+    poll_id = db.Column(db.Integer, db.ForeignKey('polls.id'))
+    registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Vote(db.Model):
+    __tablename__ = "votes"
+    id = db.Column(db.Integer, primary_key=True)
+    voter_id = db.Column(db.Integer, db.ForeignKey('voters.id'))
+    candidate_id = db.Column(db.Integer, db.ForeignKey('candidates.id'))
+    poll_id = db.Column(db.Integer, db.ForeignKey('polls.id'))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
